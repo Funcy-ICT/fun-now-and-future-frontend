@@ -1,12 +1,13 @@
-import styles from "./Weather.module.css";
+import styles from './Weather.module.css'
+import CallTheJmaApi from './CallTheJmaApi'
 
-function Weather() {
+export default function Weather() {
   return (
-    <section className={styles.weather}>
-      <h2>天気</h2>
-      <p>東京: 晴れ 22°C</p>
-    </section>
-  );
+    <>
+      <div className={styles.square3}>
+        {/* <p>天気</p> */}
+        <CallTheJmaApi />
+      </div>
+    </>
+  )
 }
-
-export default Weather;
