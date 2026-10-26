@@ -16,6 +16,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@fnaf/api-types": "https://github.com/Funcy-ICT/fun-now-and-future-backend/releases/download/api-types-v0.1.0/api-types.tgz",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
