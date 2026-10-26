@@ -28,3 +28,21 @@ export async function fetchDiningCongestion(signal?: AbortSignal): Promise<Conge
 	const json = await response.json();
 	return json.data;
 }
+
+// バックエンドの /signage/assets が返す、広報アセットの型
+export type NewsAsset = InferResponseType<typeof client.signage.assets.$get, 200>["assets"][number];
+
+/*  バックエンドからニュース（広報アセット）の一覧を取得する
+    /signage/assets は x-api-key が要るので、VITE_SIGNAGE_API_KEY を付ける
+*/
+export async function getNews(): Promise<{ assets: NewsAsset[] }> {
+	const response = await client.signage.assets.$get(undefined, {
+		headers: { "x-api-key": import.meta.env.VITE_SIGNAGE_API_KEY },
+	});
+
+	if (!response.ok) {
+		throw new Error("ニュースの取得に失敗しました");
+	}
+
+	return response.json();
+}
