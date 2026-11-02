@@ -1,0 +1,48 @@
+name: Deploy web
+
+# 投稿画面(web)を、fun-now-and-future-510007のFirebase Hostingにデプロイする。
+# サイネージはRaspberry Piの中に置くので、ここではデプロイしない
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Workload Identity連携で、Google Cloudに入るため。鍵のファイルは使わない
+  id-token: write
+
+# デプロイが重ならないよう、前のものが終わるまで待つ
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+
+      # このリポジトリからだけ使える(プロバイダの条件で、repositoryを絞っている)
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/424754169364/locations/global/workloadIdentityPools/github/providers/fun-now-and-future-frontend
+          service_account: fnaf-hosting-deployer@fun-now-and-future-510007.iam.gserviceaccount.com
+
+      - run: npx --yes firebase-tools@15.28.2 deploy --only hosting --project fun-now-and-future-510007 --non-interactive
