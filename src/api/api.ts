@@ -36,3 +36,45 @@ export async function fetchDiningCongestion(signal?: AbortSignal): Promise<Conge
 
 	return json.data;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// 任意の location の混雑度を取得
+export async function getCongestion(location: string): Promise<CongestionResponse> {
+	const params = new URLSearchParams({ location });
+	const response = await fetch(`${API_BASE_URL}/getCongestion?${params}`);
+
+	if (!response.ok) {
+		throw new Error("混雑度の取得に失敗しました");
+	}
+
+	return response.json();
+}
+
+// 広報アセットの型
+export type NewsAsset = {
+	id: string;
+	tag: string;
+	title: string;
+	description: string;
+	media: {
+		url: string;
+		contentType: string;
+	};
+	publishUntil: string | null;
+};
+
+// ニュース（広報アセット）一覧を取得
+export async function getNews(): Promise<{ assets: NewsAsset[] }> {
+	const response = await fetch(`${API_BASE_URL}/signage/assets`, {
+		headers: {
+			"x-api-key": import.meta.env.VITE_SIGNAGE_API_KEY,
+		},
+	});
+
+	if (!response.ok) {
+		throw new Error("ニュースの取得に失敗しました");
+	}
+
+	return response.json();
+}

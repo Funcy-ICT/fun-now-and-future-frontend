@@ -6,10 +6,8 @@ import {
   IconMoodSmile,
   IconToolsKitchen2,
 } from "@tabler/icons-react";
-import { getCongestion, type Congestion } from "../../api/api";
+import { fetchDiningCongestion, type CongestionStatus } from "../../api/api";
 
-// TODO: バックエンドで定義されている食堂のlocation IDに合わせる
-const LOCATION = "dining";
 const FETCH_INTERVAL_MS = 60 * 1000;
 
 const LEVEL_DISPLAY: Record<number, { label: string; waitTime: string }> = {
@@ -28,13 +26,16 @@ function Mood({ level }: { level: number }) {
 }
 
 function Dining() {
-  const [congestion, setCongestion] = useState<Congestion | null>(null);
+  const [congestion, setCongestion] = useState<CongestionStatus | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchCongestion = () => {
-      getCongestion(LOCATION)
-        .then((response) => setCongestion(response.data))
+      fetchDiningCongestion(controller.signal)
+        .then(setCongestion)
         .catch((error) => {
+          if (controller.signal.aborted) return;
           console.error("食堂の混雑度の取得に失敗しました", error);
           setCongestion(null);
         });
@@ -42,7 +43,10 @@ function Dining() {
 
     fetchCongestion();
     const intervalId = setInterval(fetchCongestion, FETCH_INTERVAL_MS);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      controller.abort();
+    };
   }, []);
 
   const level = congestion?.level ?? null;
