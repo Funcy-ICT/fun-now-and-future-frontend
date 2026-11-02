@@ -1,7 +1,7 @@
 import styles from "./Bus.module.css";
 import { useEffect, useState } from "react";
 import { IconUsersGroup } from "@tabler/icons-react";
-import { getCongestion, type Congestion } from "../../api/api";
+import { getCongestion, type CongestionStatus } from "../../api/api";
 
 // TODO: バックエンドで定義されているバス停のlocation IDに合わせる
 const LOCATION = "bus";
@@ -29,7 +29,7 @@ function Person({ className }: { className: string }) {
 }
 
 function Bus() {
-  const [congestion, setCongestion] = useState<Congestion | null>(null);
+  const [congestion, setCongestion] = useState<CongestionStatus | null>(null);
 
   useEffect(() => {
     const fetchCongestion = () => {
