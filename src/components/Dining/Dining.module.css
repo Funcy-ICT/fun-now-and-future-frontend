@@ -1,5 +1,59 @@
 .dining {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 1rem 1.25rem 1rem 1.25rem;
+  border: 0.15rem solid var(--dining);
+  border-radius: 0.5rem;
+  background: var(--dining-bg);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+.headingIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--dining);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: 1rem;
+}
+
+.mood {
+  width: 5.5rem;
+  height: 5.5rem;
+  color: var(--dining);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.label {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.waitTime {
+  font-size: 1rem;
+}
+
+.unavailable {
+  font-size: 1.1rem;
+  color: #888;
 }
