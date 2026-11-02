@@ -1,124 +1,73 @@
-import { useEffect, useMemo, useState } from "react";
 import styles from "./Dining.module.css";
-import { fetchDiningCongestion, type CongestionStatus } from "../../api/api";
+import { useEffect, useState } from "react";
+import {
+  IconMoodEmpty,
+  IconMoodSad,
+  IconMoodSmile,
+  IconToolsKitchen2,
+} from "@tabler/icons-react";
+import { getCongestion, type Congestion } from "../../api/api";
+
+// TODO: バックエンドで定義されている食堂のlocation IDに合わせる
+const LOCATION = "dining";
+const FETCH_INTERVAL_MS = 60 * 1000;
+
+const LEVEL_DISPLAY: Record<number, { label: string; waitTime: string }> = {
+  1: { label: "空いています", waitTime: "0~3分" },
+  2: { label: "やや空き", waitTime: "3~5分" },
+  3: { label: "やや混雑", waitTime: "5~10分" },
+  4: { label: "混雑", waitTime: "10~15分" },
+  5: { label: "大変混雑", waitTime: "15分以上" },
+};
+
+function Mood({ level }: { level: number }) {
+  const props = { className: styles.mood, stroke: 2, "aria-hidden": true };
+  if (level <= 2) return <IconMoodSmile {...props} />;
+  if (level === 3) return <IconMoodEmpty {...props} />;
+  return <IconMoodSad {...props} />;
+}
 
 function Dining() {
-  const [data, setData] = useState<CongestionStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [congestion, setCongestion] = useState<Congestion | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
+    const fetchCongestion = () => {
+      getCongestion(LOCATION)
+        .then((response) => setCongestion(response.data))
+        .catch((error) => {
+          console.error("食堂の混雑度の取得に失敗しました", error);
+          setCongestion(null);
+        });
+    };
 
-    async function loadDiningCongestion() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const result = await fetchDiningCongestion(controller.signal);
-        setData(result);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        setError(error instanceof Error ? error.message : "食堂情報を取得できませんでした");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void loadDiningCongestion();
-
-    return () => controller.abort();
+    fetchCongestion();
+    const intervalId = setInterval(fetchCongestion, FETCH_INTERVAL_MS);
+    return () => clearInterval(intervalId);
   }, []);
 
-  const level = data?.level ?? null;
-  const fillPercent = level === null ? 0 : Math.round((level / 9) * 100);
-  const levelText = useMemo(() => {
-    if (!data) {
-      return "情報を取得中です";
-    }
-
-    if (data.stale) {
-      return data.level === null ? "更新が止まっています" : `レベル ${data.level} / 9 · 古いデータです`;
-    }
-
-    if (data.level === null) {
-      return "基準値準備中です";
-    }
-
-    return `レベル ${data.level} / 9`;
-  }, [data]);
-
-  const updatedAt = useMemo(() => {
-    if (!data?.windowStart) {
-      return "更新時刻は未取得です";
-    }
-
-    const date = new Date(data.windowStart);
-
-    if (Number.isNaN(date.getTime())) {
-      return `窓: ${data.windowStart}`;
-    }
-
-    return `窓: ${date.toLocaleString("ja-JP")}`;
-  }, [data?.windowStart]);
-
-  const isBusy = level !== null && level >= 7;
+  const level = congestion?.level ?? null;
+  const display = level === null ? undefined : LEVEL_DISPLAY[level];
 
   return (
     <section className={styles.dining}>
-      <div className={styles.header}>
-        <div>
-          <p className={styles.kicker}>Campus Dining</p>
-          <h2>食堂の混雑度</h2>
-        </div>
-        <span className={styles.status}>{loading ? "更新中" : error ? "取得失敗" : "表示中"}</span>
+      <h2 className={styles.heading}>
+        <IconToolsKitchen2 className={styles.headingIcon} stroke={2.4} aria-hidden="true" />
+        食堂の混雑状況
+      </h2>
+
+      <div className={styles.body}>
+        {level !== null && display ? (
+          <>
+            <Mood level={level} />
+            <div className={styles.status}>
+              <p className={styles.label}>{display.label}</p>
+              <p className={styles.waitTime}>待ち時間{display.waitTime}</p>
+            </div>
+          </>
+        ) : (
+          <p className={styles.unavailable}>データを取得できません</p>
+        )}
       </div>
-
-      <div className={styles.summary}>
-        <div className={styles.rateBlock}>
-          <span className={styles.rateValue}>{loading ? "--" : level === null ? "--" : level}</span>
-          <span className={styles.rateLabel}>{levelText}</span>
-        </div>
-
-        <div className={styles.progressArea} aria-hidden="true">
-          <div className={styles.progressTrack}>
-            <div
-              className={`${styles.progressFill} ${isBusy ? styles.busy : styles.normal}`}
-              style={{ width: `${fillPercent}%` }}
-            />
-          </div>
-          <div className={styles.scale}>
-            <span>空いている</span>
-            <span>混雑</span>
-          </div>
-        </div>
-      </div>
-
-      {error ? (
-        <p className={styles.message}>{error}</p>
-      ) : (
-        <div className={styles.meta}>
-          <div>
-            <span className={styles.metaLabel}>対象</span>
-            <strong className={styles.metaValue}>{loading ? "読み込み中" : "学内食堂 (cafeteria)"}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>取得窓</span>
-            <strong className={styles.metaValue}>{loading ? "--" : updatedAt}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>検出端末数</span>
-            <strong className={styles.metaValue}>{loading ? "--" : data?.uniqueDeviceCount ?? 0}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>状態</span>
-            <strong className={styles.metaValue}>{loading ? "読み込み中" : levelText}</strong>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

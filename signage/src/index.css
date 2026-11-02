@@ -1,24 +1,23 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
+  --text: #111;
+  --muted: #c4c4c4;
   --bg: #fff;
-  --border: #e5e4e7;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --news: #6f659f;
+  --news-bg: #f9f8fd;
+  --recruit-bg: #f5f8fe;
+  --bus: #f2b300;
+  --bus-bg: #fffdf6;
+  --dining: #5aa65a;
+  --dining-bg: #fff;
 
-  font: 16px/145% var(--sans);
-  color-scheme: light dark;
+  /* 1920px幅で1rem = 24px。画面サイズに合わせて全体が拡縮する */
+  font-size: 1.25vw;
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.4;
   color: var(--text);
   background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-  }
 }
 
 * {
@@ -27,20 +26,12 @@
 
 body {
   margin: 0;
+  overflow: hidden;
 }
 
 h1,
-h2 {
-  font-family: var(--sans);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
+h2,
+h3,
+p {
+  margin: 0;
 }
