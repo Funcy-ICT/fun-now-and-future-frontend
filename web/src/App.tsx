@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import './App.css'
 
 function App() {
@@ -19,26 +19,16 @@ function App() {
   const [message, setMessage] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
-  // 画像プレビュー生成
-  useEffect(() => {
-    if (!image) {
-      setImagePreview(null)
-      return
-    }
-    const url = URL.createObjectURL(image)
-    setImagePreview(url)
-    return () => {
-      URL.revokeObjectURL(url)
-    }
-  }, [image])
 
   // 画像選択処理
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
       setImage(null)
+      setImagePreview(null)
       setMessage('画像ファイルを選択してください。')
       event.target.value = ''
       return
@@ -46,12 +36,14 @@ function App() {
 
     if (file.size > 5 * 1024 * 1024) {
       setImage(null)
+      setImagePreview(null)
       setMessage('画像のサイズは5MB以下にしてください。')
       event.target.value = ''
       return
     }
 
     setImage(file)
+    setImagePreview(URL.createObjectURL(file))
     setMessage('')
   }
 
