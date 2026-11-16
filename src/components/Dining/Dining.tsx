@@ -38,6 +38,8 @@ function Dining() {
   }, []);
 
   const statusInfo = useMemo(() => {
+    const effectiveLevel = data?.level ?? null;
+
     if (loading) {
       return {
         status: "読み込み中",
@@ -54,7 +56,7 @@ function Dining() {
       };
     }
 
-    if (!data) {
+    if (effectiveLevel === null) {
       return {
         status: "情報なし",
         waitTime: "--",
@@ -62,15 +64,7 @@ function Dining() {
       };
     }
 
-    if (data.level === null) {
-      return {
-        status: "基準値準備中",
-        waitTime: "待ち時間は未定",
-        tone: "loading",
-      };
-    }
-
-    if (data.level <= 3) {
+    if (effectiveLevel <= 3) {
       return {
         status: "空いています",
         waitTime: "待ち時間0〜3分",
@@ -78,7 +72,7 @@ function Dining() {
       };
     }
 
-    if (data.level <= 6) {
+    if (effectiveLevel <= 6) {
       return {
         status: "やや混雑",
         waitTime: "待ち時間3〜8分",
