@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Dining.module.css";
 import { fetchDiningCongestion, type CongestionStatus } from "../../api/api";
+import calmImage from "../../assets/calm.png";
+import moderateImage from "../../assets/moderate.png";
+import crowdedImage from "../../assets/crowded.png";
+import diningIconImage from "../../assets/dining_icon.png";
 
 function Dining() {
   const [data, setData] = useState<CongestionStatus | null>(null);
@@ -17,12 +21,12 @@ function Dining() {
 
         const result = await fetchDiningCongestion(controller.signal);
         setData(result);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
           return;
         }
 
-        setError(error instanceof Error ? error.message : "食堂情報を取得できませんでした");
+        setError(err instanceof Error ? err.message : "食堂情報を取得できませんでした");
       } finally {
         setLoading(false);
       }
@@ -33,92 +37,86 @@ function Dining() {
     return () => controller.abort();
   }, []);
 
-  const level = data?.level ?? null;
-  const fillPercent = level === null ? 0 : Math.round((level / 9) * 100);
-  const levelText = useMemo(() => {
-    if (!data) {
-      return "情報を取得中です";
+  const statusInfo = useMemo(() => {
+    if (loading) {
+      return {
+        status: "読み込み中",
+        waitTime: "待ち時間を確認中",
+        tone: "loading",
+      };
     }
 
-    if (data.stale) {
-      return data.level === null ? "更新が止まっています" : `レベル ${data.level} / 9 · 古いデータです`;
+    if (error) {
+      return {
+        status: "取得失敗",
+        waitTime: "しばらくしてから再試行",
+        tone: "busy",
+      };
+    }
+
+    if (!data) {
+      return {
+        status: "情報なし",
+        waitTime: "--",
+        tone: "loading",
+      };
     }
 
     if (data.level === null) {
-      return "基準値準備中です";
+      return {
+        status: "基準値準備中",
+        waitTime: "待ち時間は未定",
+        tone: "loading",
+      };
     }
 
-    return `レベル ${data.level} / 9`;
-  }, [data]);
-
-  const updatedAt = useMemo(() => {
-    if (!data?.windowStart) {
-      return "更新時刻は未取得です";
+    if (data.level <= 3) {
+      return {
+        status: "空いています",
+        waitTime: "待ち時間0〜3分",
+        tone: "empty",
+      };
     }
 
-    const date = new Date(data.windowStart);
-
-    if (Number.isNaN(date.getTime())) {
-      return `窓: ${data.windowStart}`;
+    if (data.level <= 6) {
+      return {
+        status: "やや混雑",
+        waitTime: "待ち時間3〜8分",
+        tone: "moderate",
+      };
     }
 
-    return `窓: ${date.toLocaleString("ja-JP")}`;
-  }, [data?.windowStart]);
+    return {
+      status: "混雑しています",
+      waitTime: "待ち時間8分以上",
+      tone: "busy",
+    };
+  }, [data, error, loading]);
 
-  const isBusy = level !== null && level >= 7;
+  const imageSrc =
+    statusInfo.tone === "empty"
+      ? calmImage
+      : statusInfo.tone === "moderate"
+        ? moderateImage
+        : crowdedImage;
 
   return (
-    <section className={styles.dining}>
-      <div className={styles.header}>
-        <div>
-          <p className={styles.kicker}>Campus Dining</p>
-          <h2>食堂の混雑度</h2>
-        </div>
-        <span className={styles.status}>{loading ? "更新中" : error ? "取得失敗" : "表示中"}</span>
+    <section className={styles.diningCard} aria-label="食堂の混雑状況">
+      <div className={styles.headerRow}>
+        <img className={styles.titleIcon} src={diningIconImage} alt="食堂アイコン" aria-hidden="true" />
+        <h2>食堂の混雑状況</h2>
       </div>
 
-      <div className={styles.summary}>
-        <div className={styles.rateBlock}>
-          <span className={styles.rateValue}>{loading ? "--" : level === null ? "--" : level}</span>
-          <span className={styles.rateLabel}>{levelText}</span>
+      <div className={styles.contentRow}>
+        <div className={`${styles.faceCard} ${styles[statusInfo.tone]}`} aria-hidden="true">
+          <img className={styles.statusImage} src={imageSrc} alt={statusInfo.status} />
         </div>
 
-        <div className={styles.progressArea} aria-hidden="true">
-          <div className={styles.progressTrack}>
-            <div
-              className={`${styles.progressFill} ${isBusy ? styles.busy : styles.normal}`}
-              style={{ width: `${fillPercent}%` }}
-            />
-          </div>
-          <div className={styles.scale}>
-            <span>空いている</span>
-            <span>混雑</span>
-          </div>
+        <div className={styles.textBlock}>
+          <p className={styles.status}>{statusInfo.status}</p>
+          <p className={styles.waitTime}>{statusInfo.waitTime}</p>
         </div>
       </div>
-
-      {error ? (
-        <p className={styles.message}>{error}</p>
-      ) : (
-        <div className={styles.meta}>
-          <div>
-            <span className={styles.metaLabel}>対象</span>
-            <strong className={styles.metaValue}>{loading ? "読み込み中" : "学内食堂 (cafeteria)"}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>取得窓</span>
-            <strong className={styles.metaValue}>{loading ? "--" : updatedAt}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>検出端末数</span>
-            <strong className={styles.metaValue}>{loading ? "--" : data?.uniqueDeviceCount ?? 0}</strong>
-          </div>
-          <div>
-            <span className={styles.metaLabel}>状態</span>
-            <strong className={styles.metaValue}>{loading ? "読み込み中" : levelText}</strong>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

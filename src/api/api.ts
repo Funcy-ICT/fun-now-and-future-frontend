@@ -1,17 +1,11 @@
-// バックエンドの /getCongestion が返す、食堂の混雑度情報の型
-export type CongestionStatus = {
-	location: string;
-	windowStart: string;
-	uniqueDeviceCount: number;
-	level: number | null;
-	stale: boolean;
-};
+import { hc, type InferResponseType } from "hono/client";
+import type { AppType } from "@fnaf/api-types";
 
-// 正常応答のときだけ必要な、レスポンス全体の形
-type CongestionResponse = {
-	status: "success";
-	data: CongestionStatus;
-};
+// Vite の proxy でバックエンドへ送るので、相対パスにする
+const client = hc<AppType>("/");
+
+// バックエンドの /getCongestion が返す、食堂の混雑度情報の型
+export type CongestionStatus = InferResponseType<typeof client.getCongestion.$get, 200>["data"];
 
 // 混雑度を取得する対象の location
 export const CAFETERIA_LOCATION = "cafeteria";
@@ -28,7 +22,9 @@ export async function fetchCongestion(location: string, signal?: AbortSignal): P
 		throw new Error(`混雑度を取得できませんでした: ${response.status}`);
 	}
 
-	const json = (await response.json()) as CongestionResponse | { status: "error"; message?: string };
+	const json = (await response.json()) as
+		| { status: "success"; data: CongestionStatus }
+		| { status: "error"; message?: string };
 
 	if (json.status !== "success") {
 		throw new Error(json.message ?? "混雑度を取得できませんでした");
@@ -83,10 +79,28 @@ export async function fetchSignageAssets(apiKey?: string, signal?: AbortSignal):
 	}
 
 	const json = (await response.json()) as SignageAssetsResponse | { status?: string; message?: string };
-	// OpenAPI 実装では assets フィールドを返すため、そのまま返す
 	if (!("assets" in json)) {
 		throw new Error((json && (json as any).message) ?? "広報アセットの取得に失敗しました");
 	}
 
 	return (json as SignageAssetsResponse).assets;
+}
+
+// バックエンドの /signage/assets が返す、広報アセットの型
+export type NewsAsset = InferResponseType<typeof client.signage.assets.$get, 200>["assets"][number];
+
+/*
+	バックエンドからニュース（広報アセット）の一覧を取得する
+	/signage/assets は x-api-key が要るので、VITE_SIGNAGE_API_KEY を付ける
+*/
+export async function getNews(): Promise<{ assets: NewsAsset[] }> {
+	const response = await client.signage.assets.$get(undefined, {
+		headers: { "x-api-key": import.meta.env.VITE_SIGNAGE_API_KEY },
+	});
+
+	if (!response.ok) {
+		throw new Error("ニュースの取得に失敗しました");
+	}
+
+	return response.json();
 }
