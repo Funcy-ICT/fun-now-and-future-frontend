@@ -1,0 +1,37 @@
+:root {
+  --text: #111;
+  --muted: #c4c4c4;
+  --bg: #fff;
+
+  --news: #6f659f;
+  --news-bg: #f9f8fd;
+  --recruit-bg: #f5f8fe;
+  --bus: #f2b300;
+  --bus-bg: #fffdf6;
+  --dining: #5aa65a;
+  --dining-bg: #fff;
+
+  /* 1920px幅で1rem = 24px。画面サイズに合わせて全体が拡縮する */
+  font-size: 1.25vw;
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}

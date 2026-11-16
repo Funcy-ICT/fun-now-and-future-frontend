@@ -1,0 +1,20 @@
+.app {
+  display: grid;
+  grid-template-rows: 8.5rem 1fr;
+  height: 100vh;
+  padding: 0 3.75rem 1.5rem 2.9rem;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 935fr) minmax(0, 720fr);
+  gap: 4.4rem;
+  min-height: 0;
+}
+
+.side {
+  display: grid;
+  grid-template-rows: 440fr 368fr;
+  gap: 1.5rem;
+  min-height: 0;
+}
